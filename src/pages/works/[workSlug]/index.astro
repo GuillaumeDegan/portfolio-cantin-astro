@@ -1,0 +1,86 @@
+---
+import type { PortableTextBlock } from "@portabletext/types";
+import { PortableText } from "astro-portabletext";
+import Layout from "../../../layouts/Layout.astro";
+import { sanity } from "../../../lib/sanity";
+
+type WorkDetailsDoc = {
+  title: string;
+  body: PortableTextBlock[];
+  publishedAt: string;
+  coverImage: {
+    url: string;
+    alt: string;
+  };
+  category: string;
+  slug: { current: string };
+  gallery: {
+    _key: string;
+    _type: string;
+    alt: string;
+    assetUrl: string;
+    url: string;
+  }[];
+};
+
+export async function getStaticPaths() {
+  const works = await sanity.fetch<WorkDetailsDoc[]>(`*[_type == "project"]{
+    slug{
+      current
+    },
+    title,
+    body,
+    publishedAt,
+    coverImage{
+      "url": asset->url,
+      alt
+    },
+    category,
+    gallery[]{ _key, _type, alt, "assetUrl": asset->url, url }
+  }`);
+
+  const paths = works.map((work) => ({
+    params: { workSlug: work.slug.current },
+    props: { work },
+  }));
+
+  return paths;
+}
+
+const { work } = Astro.props;
+
+if (!work) {
+  return new Response(null, { status: 404 });
+}
+---
+
+<Layout>
+  <div class="work-details">
+    <img src={work.coverImage.url} alt={work.coverImage.alt} width="100%" height="100%" style="object-fit: cover;" />
+
+    <h1>{work.title}</h1>
+    <h4>{work.category}</h4>
+    <p>{work.publishedAt}</p>
+    <PortableText value={work.body} />
+  </div>
+</Layout>
+
+<style>
+  .work-details {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+  .work-card__image {
+    width: 30%;
+    height: 250px;
+    object-fit: cover;
+    display: block;
+  }
+  .work-gallery {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+  }
+</style>

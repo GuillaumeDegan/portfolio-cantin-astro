@@ -1,0 +1,18 @@
+---
+export function youtubeEmbedUrl(link: string): string {
+    try {
+      const u = new URL(link.trim())
+      if (u.hostname === 'youtu.be') {
+        const id = u.pathname.replace(/^\//, '').split('/')[0]
+        return id ? `https://www.youtube.com/embed/${id}` : link
+      }
+      if (u.hostname.endsWith('youtube.com')) {
+        if (u.pathname.startsWith('/embed/')) return link.trim()
+        const v = u.searchParams.get('v')
+        if (v) return `https://www.youtube.com/embed/${v}`
+      }
+    } catch {
+      /* ignore */
+    }
+    return link.trim()
+  }

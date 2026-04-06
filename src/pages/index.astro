@@ -1,0 +1,122 @@
+---
+import WorkCard from '../components/WorkCard.astro';
+import Layout from '../layouts/Layout.astro';
+import { sanity } from '../lib/sanity';
+
+export type WorkListItem = {
+	title: string;
+	coverImage: {
+		url: string;
+		alt: string;
+	};
+	slug: {
+		current: string;
+	};
+}
+
+function youtubeBackgroundEmbedUrl(link: string): string {
+  let videoId = ''
+  try {
+    const u = new URL(link.trim())
+    if (u.hostname === 'youtu.be') {
+      videoId = u.pathname.replace(/^\//, '').split('/')[0] ?? ''
+    } else if (u.hostname.endsWith('youtube.com')) {
+      if (u.pathname.startsWith('/embed/')) {
+        videoId = u.pathname.replace(/^\/embed\//, '').split('/')[0] ?? ''
+      } else {
+        videoId = u.searchParams.get('v') ?? ''
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  if (!videoId) return link.trim()
+
+  const params = new URLSearchParams({
+    autoplay: '1',
+    mute: '1',
+    controls: '0',
+    playsinline: '1',
+    modestbranding: '1',
+    rel: '0',
+    loop: '1',
+    playlist: videoId,
+  })
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`
+}
+
+const works = await sanity.fetch<WorkListItem[]>(`*[_type == "project"]{
+  title,
+  coverImage{
+    "url": asset->url,
+    alt
+  },
+  slug{
+    current
+  }
+}`);
+
+const embedSrc = youtubeBackgroundEmbedUrl('https://youtu.be/fSZUgE44b6E')
+---
+
+<Layout>
+	<section class="video-hero" aria-hidden="true">
+		<div class="video-hero__frame">
+			<iframe
+				src={embedSrc}
+				title="Vidéo d’accueil"
+				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+			/>
+		</div>
+	</section>
+
+	<section id="works">
+		<div style="display: flex; align-items: center; flex-direction: row; gap: 30px; padding: 0 20px;">
+			<p style="color: #fff; font-size: 16px; font-weight: 600;">Films</p>
+			<p style="color: #fff; font-size: 16px; font-weight: 600;">Motion</p>
+			<p style="color: #fff; font-size: 16px; font-weight: 600;">3D</p>
+			<p style="color: #fff; font-size: 16px; font-weight: 600;">2D</p>
+			<p style="color: #fff; font-size: 16px; font-weight: 600;">Peinture</p>
+		</div>
+
+		<div style="display: flex; align-items: center; flex-direction: row; flex-wrap: wrap;">
+			{works.map((work) => (
+				<WorkCard work={work} />
+			))}
+		</div>
+	</section>
+</Layout>
+
+<style>
+	/* Hauteur du premier écran : viewport moins la NavBar (65px) */
+	.video-hero {
+		position: relative;
+		z-index: 0;
+		height: calc(100vh);
+		height: calc(100svh);
+		overflow: hidden;
+		background: #000;
+		pointer-events: none;
+	}
+
+	/* Ratio du player YouTube (16:9). Hauteur = celle du bloc ; largeur dérivée ; débord latéral masqué */
+	.video-hero__frame {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+	}
+
+	.video-hero__frame iframe {
+		position: absolute;
+		top: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		height: 100%;
+		width: auto;
+		aspect-ratio: 16 / 9;
+		max-width: none;
+		border: 0;
+		pointer-events: none;
+	}
+
+</style>
