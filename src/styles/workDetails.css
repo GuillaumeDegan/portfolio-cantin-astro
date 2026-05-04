@@ -1,0 +1,177 @@
+.work-details {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+.work-card__image {
+  width: 30%;
+  height: 250px;
+  object-fit: cover;
+  display: block;
+}
+.work-gallery {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 12px;
+}
+
+.work-gallery__thumb {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 33%;
+  min-width: 200px;
+  max-width: 400px;
+  flex: 1 1 30%;
+}
+
+.work-gallery__thumb img {
+  display: block;
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+.work-gallery__thumb iframe {
+  display: block;
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+.work-gallery__youtube-play::before {
+  content: "";
+  position: absolute;
+  left: 54%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-style: solid;
+  border-width: 14px 0 14px 22px;
+  border-color: transparent transparent transparent #fff;
+}
+
+.work-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+}
+
+.work-lightbox[hidden] {
+  display: none;
+}
+
+.work-lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.88);
+  cursor: pointer;
+}
+
+.work-lightbox__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 10px;
+  width: min(96vw, 1320px);
+  height: min(88vh, calc(100dvh - 2.5rem));
+  max-height: calc(100dvh - 2.5rem);
+  padding: 3rem 10px 1rem;
+  box-sizing: border-box;
+}
+
+.work-lightbox__stage {
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  align-self: stretch;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+  cursor: default;
+}
+
+.work-lightbox__stage--left {
+  cursor: w-resize;
+}
+
+.work-lightbox__stage--right {
+  cursor: e-resize;
+}
+
+.work-lightbox__stage--idle {
+  cursor: default;
+}
+
+/* Zone utile entre les flèches : l’image remplit la boîte, object-fit choisit la dimension limitante */
+.work-lightbox__img-shell {
+  flex: 1 1 0%;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+}
+
+.work-lightbox__img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* Vidéo 16:9 : occupe le plus grand rectangle possible dans la zone (comme l’image) */
+.work-lightbox__video-wrap {
+  position: relative;
+  box-sizing: border-box;
+  align-self: center;
+  width: 90%;
+  /* height: min(100cqh, calc(100cqw * 9 / 16)); */
+  flex-shrink: 0;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.work-lightbox__iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.work-lightbox__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 10px;
+}
+
+.work-details-date {
+  font-size: 14px;
+  color: #666;
+}

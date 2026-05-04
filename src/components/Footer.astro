@@ -1,6 +1,42 @@
 ---
+import { sanity } from "../lib/sanity";
+
+export type FooterInfos = {
+  email: string;
+  socials: {
+    url: string;
+    image: {
+      assetUrl: string;
+      alt: string;
+    };
+  }[];
+};
+
+const footerInfos = await sanity.fetch<FooterInfos>(`
+*[_type == "footerInfos" && _id == "footerInfos"][0]{
+  email,
+  socials[]{
+    url,
+    image{
+    "assetUrl": asset->url,
+      alt
+    }
+  }
+}
+`);
+
+const { email, socials } = footerInfos;
 ---
+
 <div style="height: 200px; align-items: center; justify-content: center; display: flex; flex-direction: column;">
-    <p style="color: #fff;">[Liste réseaux sociaux ici...]</p>
-    <p style="color: #fff;">contact.cardonnerie@gmail.com</p>
+  <div style="display: flex; flex-direction: row; gap: 20px; align-items: center;">
+    {
+      socials.map((social) => (
+        <a href={social.url}>
+          <img src={social.image.assetUrl} alt={social.image.alt} width="20" />
+        </a>
+      ))
+    }
+  </div>
+  <a href={`mailto:${email}`} style="text-decoration: none;"><p style="color: #fff;">{email}</p></a>
 </div>

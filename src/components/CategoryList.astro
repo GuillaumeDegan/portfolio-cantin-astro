@@ -1,0 +1,14 @@
+---
+import "../styles/home.css";
+const { names } = Astro.props as { names: string[] };
+---
+
+<div class="category-list">
+  {
+    names.map((name) => (
+      <div class="category-list__item">
+        <p>{name}</p>
+      </div>
+    ))
+  }
+</div>

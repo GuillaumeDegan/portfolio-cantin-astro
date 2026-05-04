@@ -1,4 +1,29 @@
 ---
+export function youtubeVideoId(link: string): string | null {
+  try {
+    const u = new URL(link.trim())
+    if (u.hostname === "youtu.be") {
+      const id = u.pathname.replace(/^\//, "").split("/")[0]
+      return id || null
+    }
+    if (u.hostname.endsWith("youtube.com")) {
+      if (u.pathname.startsWith("/embed/")) {
+        const id = u.pathname.replace(/^\/embed\//, "").split("/")[0]
+        return id || null
+      }
+      return u.searchParams.get("v")
+    }
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
+export function youtubeThumbnailUrl(link: string): string | null {
+  const id = youtubeVideoId(link)
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null
+}
+
 export function youtubeEmbedUrl(link: string): string {
     try {
       const u = new URL(link.trim())
@@ -16,3 +41,10 @@ export function youtubeEmbedUrl(link: string): string {
     }
     return link.trim()
   }
+
+/** URL d’embed pour lecteur avec lecture auto (lightbox). */
+export function youtubeEmbedUrlAutoplay(link: string): string {
+  const base = youtubeEmbedUrl(link)
+  const sep = base.includes("?") ? "&" : "?"
+  return `${base}${sep}autoplay=1&rel=0&enablejsapi=1`
+}

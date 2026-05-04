@@ -1,10 +1,11 @@
 ---
+import logoWhiteUrl from "../assets/logo-white.svg?url";
 ---
 
-<div style="height: 65px; background-color: #000; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; left: 0; right: 0; z-index: 100;">
-    <a href="/"><img src="/logo.svg" alt="Logo" width="40" height="40" /></a>
-    <div style="display: flex; align-items: center; flex-direction: row; gap: 20px;">
-    <a href="/#works" style="color: #fff; text-decoration: none; font-size: 16px; font-weight: 600;">Works</a>
-    <a href="/about-me" style="color: #fff; text-decoration: none; font-size: 16px; font-weight: 600;">About me</a>
-    </div>
+<div class="navbar">
+  <a href="/"><img src={logoWhiteUrl} alt="Logo" width="40" height="40" /></a>
+  <div class="navbar__links">
+    <a href="/#works" class="navbar__links-item">Works</a>
+    <a href="/about-me" class="navbar__links-item">About me</a>
+  </div>
 </div>

@@ -1,23 +1,47 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import type { PortableTextBlock } from "@portabletext/types";
+import { PortableText } from "astro-portabletext";
+import Layout from "../../layouts/Layout.astro";
+import { sanity } from "../../lib/sanity";
+import "../../styles/about-me.css";
+
+export type AboutMeInfos = {
+  title: string;
+  body: PortableTextBlock[];
+  image: {
+    url: string;
+    alt: string;
+  };
+};
+
+const aboutMeInfos = await sanity.fetch<AboutMeInfos>(`
+*[_type == "aboutMeInfos" && _id == "aboutMeInfos"][0]{
+  title,
+  body,
+  "image": image{
+    "url": asset->url,
+    alt
+  }
+}
+`);
+
+const {
+  title,
+  body,
+  image: { url, alt },
+} = aboutMeInfos;
+
+if (!aboutMeInfos) {
+  return new Response(null, { status: 404 });
+}
 ---
 
 <Layout>
-    <div style="display: flex; justify-content: center;  flex-direction: row; gap: 80px; margin-top: 65px; padding: 80px;">
-        <div style="width: 50%;">
-            <h1 style="color: #fff;">Cantin Cardonnerie</h1>
-            <p style="color: #fff;">
-                Cantin Cardonnerie est un artiste visuel qui se spécialise dans la création de contenu visuel pour les médias sociaux.
-                Il est passionné par la création de contenu visuel qui est à la fois esthétique et engageant.
-                Il est également passionné par la création de contenu visuel qui est à la fois esthétique et engageant.
-                Il est également passionné par la création de contenu visuel qui est à la fois esthétique et engageant.
-                Il est également passionné par la création de contenu visuel qui est à la fois esthétique et engageant.
-                Il est également passionné par la création de contenu visuel qui est à la fois esthétique et engageant.
-                Il est également passionné par la création de contenu visuel qui est à la fois esthétique et engageant.
-                Il est également passionné par la création de contenu visuel qui est à la fois esthétique et engageant.
-                Il est également passionné par la création de contenu visuel qui est à la fois esthétique et engageant.
-            </p>
-        </div>
-        <img src="https://img.freepik.com/photos-gratuite/vue-cote-aras-ecarlate-vue-pres-tete-ara-ecarlate_488145-3540.jpg?semt=ais_hybrid&w=740&q=80" alt="About me" width="300px" height="700px" style="object-fit: cover;" />
+  <div class="about-me">
+    <div class="about-me__content">
+      <h1>{title || ""}</h1>
+      <PortableText value={body || []} />
     </div>
+    <img class="about-me__image" src={url || ""} alt={alt || ""} loading="lazy" />
+  </div>
 </Layout>
