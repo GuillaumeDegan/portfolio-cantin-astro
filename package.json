@@ -12,6 +12,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/vercel": "^10.0.6",
     "@sanity/client": "^7.20.0",
     "astro": "^6.1.1",
     "astro-portabletext": "^0.13.0",
