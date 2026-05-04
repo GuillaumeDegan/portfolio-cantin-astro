@@ -1,6 +1,5 @@
 ---
 export const prerender = false;
-import WorkCard from "../components/WorkCard.astro";
 import Layout from "../layouts/Layout.astro";
 import { sanity } from "../lib/sanity";
 import "../styles/home.css";
@@ -60,23 +59,24 @@ const categories = await sanity.fetch<{ title: string; slug: string }[]>(`
   }
 `);
 
-const works = await sanity.fetch<WorkListItem[]>(
-  `*[_type == "project" ${category ? `&& $category in categories[]->slug.current` : ""}]{
-    title,
-    "categories": categories[]->{
-      title,
-      "slug": slug.current
-    },
-    coverImage{
-      "url": asset->url,
-      alt
-    },
-    slug{
-      current
-    }
-  }`,
-  { category }
-);
+const works = await sanity.fetch(`*[_type == "project"][0..2]{title}`);
+// const works = await sanity.fetch<WorkListItem[]>(
+//   `*[_type == "project" ${category ? `&& $category in categories[]->slug.current` : ""}]{
+//     title,
+//     "categories": categories[]->{
+//       title,
+//       "slug": slug.current
+//     },
+//     coverImage{
+//       "url": asset->url,
+//       alt
+//     },
+//     slug{
+//       current
+//     }
+//   }`,
+//   { category }
+// );
 
 const videoBackgroundUrl = await sanity.fetch<{ url: string }>(`
 *[_type == "homeBackgroundVideo" && _id == "homeBackgroundVideo"][0]{
@@ -112,7 +112,7 @@ const embedSrc = youtubeBackgroundEmbedUrl(videoBackgroundUrl?.url ?? "");
     </div>
 
     <div style="display: flex; align-items: center; flex-direction: row; flex-wrap: wrap;">
-      {works.map((work) => <WorkCard work={work} />)}
+      <!-- {works.map((work) => <WorkCard work={work} />)} -->
     </div>
   </section>
 </Layout>
