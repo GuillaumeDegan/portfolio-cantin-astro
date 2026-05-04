@@ -1,0 +1,264 @@
+---
+import type { PortableTextBlock } from "@portabletext/types";
+import { PortableText } from "astro-portabletext";
+import Layout from "../../../layouts/Layout.astro";
+import { sanity } from "../../../lib/sanity";
+import { youtubeThumbnailUrl } from "../../../utils/index.astro";
+import CategoryList from "../../../components/CategoryList.astro";
+import { format } from "date-fns";
+import "../../../styles/workDetails.css";
+import { youtubeEmbedUrl } from "../../../utils/index.astro";
+
+type WorkDetailsDoc = {
+  title: string;
+  body: PortableTextBlock[];
+  publishedAt: string;
+  coverImage: {
+    url: string;
+    alt: string;
+  };
+  categories: { title: string }[];
+  slug: { current: string };
+  gallery: {
+    _key: string;
+    _type: string;
+    alt: string;
+    assetUrl: string;
+    url: string;
+  }[];
+};
+
+type GalleryMediaItem =
+  | { kind: "image"; src: string; alt: string; lightboxIndex: number }
+  | { kind: "youtube"; videoUrl: string; alt: string };
+
+type GalleryLightboxItem = { kind: "image"; src: string; alt: string };
+
+export async function getStaticPaths() {
+  const works = await sanity.fetch<WorkDetailsDoc[]>(`*[_type == "project"]{
+    slug{
+      current
+    },
+    title,
+    body,
+    publishedAt,
+    coverImage{
+      "url": asset->url,
+      alt
+    },
+    categories[]->{
+      title
+    },
+    gallery[]{ _key, _type, alt, "assetUrl": asset->url, url }
+  }`);
+
+  const paths = works.map((work) => ({
+    params: { workSlug: work.slug.current },
+    props: { work },
+  }));
+
+  return paths;
+}
+
+const { work } = Astro.props;
+
+if (!work) {
+  return new Response(null, { status: 404 });
+}
+
+const galleryMedia: GalleryMediaItem[] = [];
+const galleryLightbox: GalleryLightboxItem[] = [];
+
+for (const g of work.gallery ?? []) {
+  if (g._type === "image" && g.assetUrl) {
+    const imageItem: GalleryLightboxItem = { kind: "image", src: g.assetUrl, alt: g.alt || "" };
+    galleryLightbox.push(imageItem);
+    galleryMedia.push({
+      kind: "image",
+      src: imageItem.src,
+      alt: imageItem.alt,
+      lightboxIndex: galleryLightbox.length - 1,
+    });
+    continue;
+  }
+
+  if (g._type === "youtubeVideo" && g.url) {
+    const thumbUrl = youtubeThumbnailUrl(g.url);
+    if (!thumbUrl) continue;
+    galleryMedia.push({
+      kind: "youtube",
+      videoUrl: youtubeEmbedUrl(g.url),
+      alt: g.alt || "Vidéo YouTube",
+    });
+  }
+}
+---
+
+<Layout>
+  <div class="work-details">
+    <img src={work.coverImage.url} alt={work.coverImage.alt} width="100%" height="100%" style="object-fit: cover; " />
+
+    <h1 style="font-family: 'Forma DJR Text Bold';">{work.title}</h1>
+    <CategoryList names={work.categories.map((category) => category.title)} />
+    <p class="work-details-date">
+      {format(new Date(work.publishedAt), "dd/MM/yyyy")}
+    </p>
+    <PortableText value={work.body} />
+
+    <div class="work-gallery">
+      {
+        galleryMedia.map((item, index) =>
+          item.kind === "image" ? (
+            <button
+              type="button"
+              class="work-gallery__thumb"
+              data-lightbox-open={item.lightboxIndex}
+              aria-label={`Agrandir l’image ${item.lightboxIndex + 1}`}
+            >
+              <img src={item.src} alt={item.alt} width="33%" height="300" loading="lazy" />
+            </button>
+          ) : (
+            <div class="work-gallery__thumb">
+              <iframe src={item.videoUrl} title={item.alt} />
+            </div>
+          )
+        )
+      }
+    </div>
+  </div>
+
+  <div id="work-lightbox" class="work-lightbox" hidden>
+    <button type="button" class="work-lightbox__backdrop" aria-label="Fermer la fenêtre"></button>
+    <div class="work-lightbox__panel" role="dialog" aria-modal="true" aria-label="Média en grand">
+      <button type="button" class="work-lightbox__close" aria-label="Fermer">&times;</button>
+      <div class="work-lightbox__stage"></div>
+    </div>
+  </div>
+</Layout>
+
+<script define:vars={{ galleryLightbox }}>
+  const root = document.getElementById("work-lightbox");
+  const stage = root?.querySelector(".work-lightbox__stage");
+  const btnClose = root?.querySelector(".work-lightbox__close");
+  const backdrop = root?.querySelector(".work-lightbox__backdrop");
+
+  if (!root || !stage || !btnClose || !backdrop) {
+    /* rien */
+  } else {
+    let index = 0;
+    let stageZone = "";
+
+    function isPhoneViewport() {
+      return window.matchMedia("(max-width: 768px)").matches;
+    }
+
+    function canGoPrev() {
+      return index > 0;
+    }
+
+    function canGoNext() {
+      return index < galleryLightbox.length - 1;
+    }
+
+    function applyStageCursor() {
+      stage.classList.remove("work-lightbox__stage--left", "work-lightbox__stage--right", "work-lightbox__stage--idle");
+      if (stageZone === "left" && canGoPrev()) {
+        stage.classList.add("work-lightbox__stage--left");
+        return;
+      }
+      if (stageZone === "right" && canGoNext()) {
+        stage.classList.add("work-lightbox__stage--right");
+        return;
+      }
+      stage.classList.add("work-lightbox__stage--idle");
+    }
+
+    function clearStage() {
+      stage.innerHTML = "";
+      stageZone = "";
+      applyStageCursor();
+    }
+
+    function renderAt(i) {
+      index = i;
+      clearStage();
+      const item = galleryLightbox[i];
+      if (!item) return;
+
+      const shell = document.createElement("div");
+      shell.className = "work-lightbox__img-shell";
+      const img = document.createElement("img");
+      img.src = item.src;
+      img.alt = item.alt;
+      img.className = "work-lightbox__img";
+      shell.appendChild(img);
+      stage.appendChild(shell);
+      applyStageCursor();
+    }
+
+    function openAt(i) {
+      if (isPhoneViewport()) return;
+      if (!galleryLightbox.length) return;
+      index = Math.max(0, Math.min(i, galleryLightbox.length - 1));
+      root.hidden = false;
+      document.body.style.overflow = "hidden";
+      renderAt(index);
+    }
+
+    function closeLb() {
+      clearStage();
+      root.hidden = true;
+      document.body.style.overflow = "";
+    }
+
+    document.querySelectorAll("[data-lightbox-open]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (isPhoneViewport()) return;
+        const raw = btn.getAttribute("data-lightbox-open");
+        const i = raw == null ? 0 : parseInt(raw, 10);
+        openAt(Number.isNaN(i) ? 0 : i);
+      });
+    });
+
+    stage.addEventListener("mousemove", (e) => {
+      if (root.hidden) return;
+      const rect = stage.getBoundingClientRect();
+      const center = rect.left + rect.width / 2;
+      stageZone = e.clientX < center ? "left" : "right";
+      applyStageCursor();
+    });
+
+    stage.addEventListener("mouseleave", () => {
+      if (root.hidden) return;
+      stageZone = "";
+      applyStageCursor();
+    });
+
+    stage.addEventListener("click", (e) => {
+      if (root.hidden || isPhoneViewport()) return;
+      const rect = stage.getBoundingClientRect();
+      const center = rect.left + rect.width / 2;
+      if (e.clientX < center) {
+        if (canGoPrev()) renderAt(index - 1);
+      } else if (canGoNext()) {
+        renderAt(index + 1);
+      }
+    });
+
+    btnClose.addEventListener("click", closeLb);
+    backdrop.addEventListener("click", closeLb);
+
+    document.addEventListener("keydown", (e) => {
+      if (root.hidden) return;
+      if (e.key === "Escape") closeLb();
+      if (e.key === "ArrowLeft" && index > 0) renderAt(index - 1);
+      if (e.key === "ArrowRight" && index < galleryLightbox.length - 1) renderAt(index + 1);
+    });
+
+    window.addEventListener("resize", () => {
+      if (!root.hidden && isPhoneViewport()) {
+        closeLb();
+      }
+    });
+  }
+</script>

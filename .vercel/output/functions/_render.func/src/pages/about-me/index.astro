@@ -1,0 +1,47 @@
+---
+import type { PortableTextBlock } from "@portabletext/types";
+import { PortableText } from "astro-portabletext";
+import Layout from "../../layouts/Layout.astro";
+import { sanity } from "../../lib/sanity";
+import "../../styles/about-me.css";
+
+export type AboutMeInfos = {
+  title: string;
+  body: PortableTextBlock[];
+  image: {
+    url: string;
+    alt: string;
+  };
+};
+
+const aboutMeInfos = await sanity.fetch<AboutMeInfos>(`
+*[_type == "aboutMeInfos" && _id == "aboutMeInfos"][0]{
+  title,
+  body,
+  "image": image{
+    "url": asset->url,
+    alt
+  }
+}
+`);
+
+const {
+  title,
+  body,
+  image: { url, alt },
+} = aboutMeInfos;
+
+if (!aboutMeInfos) {
+  return new Response(null, { status: 404 });
+}
+---
+
+<Layout>
+  <div class="about-me">
+    <div class="about-me__content">
+      <h1>{title || ""}</h1>
+      <PortableText value={body || []} />
+    </div>
+    <img class="about-me__image" src={url || ""} alt={alt || ""} loading="lazy" />
+  </div>
+</Layout>
