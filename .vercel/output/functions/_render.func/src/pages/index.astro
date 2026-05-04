@@ -1,0 +1,118 @@
+---
+export const prerender = false;
+import WorkCard from "../components/WorkCard.astro";
+import Layout from "../layouts/Layout.astro";
+import { sanity } from "../lib/sanity";
+import "../styles/home.css";
+
+export type WorkListItem = {
+  title: string;
+  categories: {
+    title: string;
+    slug: string;
+  }[];
+  coverImage: {
+    url: string;
+    alt: string;
+  };
+  slug: {
+    current: string;
+  };
+};
+
+function youtubeBackgroundEmbedUrl(link: string): string {
+  let videoId = "";
+  try {
+    const u = new URL(link.trim());
+    if (u.hostname === "youtu.be") {
+      videoId = u.pathname.replace(/^\//, "").split("/")[0] ?? "";
+    } else if (u.hostname.endsWith("youtube.com")) {
+      if (u.pathname.startsWith("/embed/")) {
+        videoId = u.pathname.replace(/^\/embed\//, "").split("/")[0] ?? "";
+      } else {
+        videoId = u.searchParams.get("v") ?? "";
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  if (!videoId) return link.trim();
+
+  const params = new URLSearchParams({
+    autoplay: "1",
+    mute: "1",
+    controls: "0",
+    playsinline: "1",
+    modestbranding: "1",
+    rel: "0",
+    loop: "1",
+    playlist: videoId,
+  });
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+}
+
+const category = Astro.url.searchParams.get("category");
+
+const categories = await sanity.fetch<{ title: string; slug: string }[]>(`
+  *[_type == "category"]{
+    title,
+    "slug": slug.current
+  }
+`);
+
+const works = await sanity.fetch<WorkListItem[]>(
+  `*[_type == "project" ${category ? `&& $category in categories[]->slug.current` : ""}]{
+    title,
+    "categories": categories[]->{
+      title,
+      "slug": slug.current
+    },
+    coverImage{
+      "url": asset->url,
+      alt
+    },
+    slug{
+      current
+    }
+  }`,
+  { category }
+);
+
+const videoBackgroundUrl = await sanity.fetch<{ url: string }>(`
+*[_type == "homeBackgroundVideo" && _id == "homeBackgroundVideo"][0]{
+  url
+  }
+  `);
+
+const embedSrc = youtubeBackgroundEmbedUrl(videoBackgroundUrl?.url ?? "");
+---
+
+<Layout>
+  <section class="video-hero" aria-hidden="true">
+    <div class="video-hero__frame">
+      <iframe
+        src={embedSrc}
+        title="Vidéo d’accueil"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      ></iframe>
+    </div>
+  </section>
+
+  <section id="works">
+    <div class="filters">
+      <a href="/#works" class={!category ? "active" : ""}>All</a>
+
+      {
+        categories.map((cat) => (
+          <a href={`/?category=${cat.slug}#works`} class={category === cat.slug ? "active" : ""}>
+            {cat.title}
+          </a>
+        ))
+      }
+    </div>
+
+    <div style="display: flex; align-items: center; flex-direction: row; flex-wrap: wrap;">
+      {works.map((work) => <WorkCard work={work} />)}
+    </div>
+  </section>
+</Layout>
