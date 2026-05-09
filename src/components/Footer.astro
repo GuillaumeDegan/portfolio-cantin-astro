@@ -32,7 +32,7 @@ const { email, socials } = footerInfos;
   <div style="display: flex; flex-direction: row; gap: 20px; align-items: center;">
     {
       socials.map((social) => (
-        <a href={social.url}>
+        <a href={social.url} target="_blank" rel="noopener noreferrer">
           <img src={social.image.assetUrl} alt={social.image.alt} width="20" />
         </a>
       ))

@@ -60,7 +60,8 @@
   bottom: 0;
 }
 
-.video-hero__frame iframe {
+.video-hero__frame iframe,
+.video-hero__frame video {
   position: absolute;
   top: 0;
   left: 50%;
