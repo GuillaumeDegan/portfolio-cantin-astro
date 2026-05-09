@@ -8,7 +8,6 @@ import CategoryList from "../../../components/CategoryList.astro";
 import { format } from "date-fns";
 import "../../../styles/workDetails.css";
 import { youtubeEmbedUrl } from "../../../utils/index.astro";
-export const prerender = true;
 type WorkDetailsDoc = {
   title: string;
   body: PortableTextBlock[];
@@ -34,33 +33,17 @@ type GalleryMediaItem =
 
 type GalleryLightboxItem = { kind: "image"; src: string; alt: string };
 
-export async function getStaticPaths() {
-  const works = await sanity.fetch<WorkDetailsDoc[]>(`*[_type == "project"]{
-    slug{
-      current
-    },
-    title,
-    body,
-    publishedAt,
-    coverImage{
-      "url": asset->url,
-      alt
-    },
-    categories[]->{
-      title
-    },
-    gallery[]{ _key, _type, alt, "assetUrl": asset->url, url }
-  }`);
+const { workSlug } = Astro.params;
 
-  const paths = works.map((work) => ({
-    params: { workSlug: work.slug.current },
-    props: { work },
-  }));
-
-  return paths;
-}
-
-const { work } = Astro.props;
+const work = await sanity.fetch<WorkDetailsDoc>(
+  `*[_type == "project" && slug.current == $slug][0]{
+  title, body, publishedAt,
+  coverImage{ "url": asset->url, alt },
+  categories[]->{ title },
+  gallery[]{ _key, _type, alt, "assetUrl": asset->url, url }
+}`,
+  { slug: workSlug }
+);
 
 if (!work) {
   return new Response(null, { status: 404 });
