@@ -8,7 +8,7 @@ import CategoryList from "../../../components/CategoryList.astro";
 import { format } from "date-fns";
 import "../../../styles/workDetails.css";
 import { youtubeEmbedUrl } from "../../../utils/index.astro";
-
+export const prerender = true;
 type WorkDetailsDoc = {
   title: string;
   body: PortableTextBlock[];
