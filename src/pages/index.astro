@@ -78,23 +78,16 @@ const works = await sanity.fetch<WorkListItem[]>(
   { category }
 );
 
-const videoBackgroundUrl = await sanity.fetch<{ url: string }>(`
-*[_type == "homeBackgroundVideo" && _id == "homeBackgroundVideo"][0]{
-  url
-  }
-  `);
-
-const embedSrc = youtubeBackgroundEmbedUrl(videoBackgroundUrl?.url ?? "");
+const homeBackgroundVideo = await sanity.fetch<{ videoUrl: string | null } | null>(
+  `*[_id == "homeBackgroundVideo"][0]{ "videoUrl": video.asset->url }`
+);
+const homeVideoSrc = homeBackgroundVideo?.videoUrl ?? undefined;
 ---
 
 <Layout>
   <section class="video-hero" aria-hidden="true">
     <div class="video-hero__frame">
-      <iframe
-        src={embedSrc}
-        title="Vidéo d’accueil"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      ></iframe>
+      {homeVideoSrc ? <video src={homeVideoSrc} autoplay muted loop playsinline /> : null}
     </div>
   </section>
 
