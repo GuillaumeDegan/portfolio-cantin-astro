@@ -102,7 +102,12 @@ for (const g of work.gallery ?? []) {
             </button>
           ) : (
             <div class="work-gallery__thumb">
-              <iframe src={item.videoUrl} title={item.alt} />
+              <iframe
+                src={`${item.videoUrl}${item.videoUrl.includes("?") ? "&" : "?"}autoplay=1`}
+                title={item.alt}
+                allow="autoplay; encrypted-media"
+                allowfullscreen
+              />
             </div>
           )
         )

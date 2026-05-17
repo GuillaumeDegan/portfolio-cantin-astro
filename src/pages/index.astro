@@ -3,6 +3,8 @@ export const prerender = false;
 import WorkCard from "../components/WorkCard.astro";
 import Layout from "../layouts/Layout.astro";
 import { sanity } from "../lib/sanity";
+import muteIconUrl from "../assets/mute-icon.svg?url";
+import unmuteIconUrl from "../assets/unmute-icon.svg?url";
 import "../styles/home.css";
 
 export type WorkListItem = {
@@ -20,37 +22,6 @@ export type WorkListItem = {
   };
 };
 
-function youtubeBackgroundEmbedUrl(link: string): string {
-  let videoId = "";
-  try {
-    const u = new URL(link.trim());
-    if (u.hostname === "youtu.be") {
-      videoId = u.pathname.replace(/^\//, "").split("/")[0] ?? "";
-    } else if (u.hostname.endsWith("youtube.com")) {
-      if (u.pathname.startsWith("/embed/")) {
-        videoId = u.pathname.replace(/^\/embed\//, "").split("/")[0] ?? "";
-      } else {
-        videoId = u.searchParams.get("v") ?? "";
-      }
-    }
-  } catch {
-    /* ignore */
-  }
-  if (!videoId) return link.trim();
-
-  const params = new URLSearchParams({
-    autoplay: "1",
-    mute: "1",
-    controls: "0",
-    playsinline: "1",
-    modestbranding: "1",
-    rel: "0",
-    loop: "1",
-    playlist: videoId,
-  });
-  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
-}
-
 const category = Astro.url.searchParams.get("category");
 
 const categories = await sanity.fetch<{ title: string; slug: string }[]>(`
@@ -61,7 +32,7 @@ const categories = await sanity.fetch<{ title: string; slug: string }[]>(`
 `);
 
 const works = await sanity.fetch<WorkListItem[]>(
-  `*[_type == "project" ${category ? `&& $category in categories[]->slug.current` : ""}]{
+  `*[_type == "project" ${category ? `&& $category in categories[]->slug.current` : ""}] | order(publishedAt desc) {
     title,
     "categories": categories[]->{
       title,
@@ -87,7 +58,29 @@ const homeVideoSrc = homeBackgroundVideo?.videoUrl ?? undefined;
 <Layout>
   <section class="video-hero" aria-hidden="true">
     <div class="video-hero__frame">
-      {homeVideoSrc ? <video src={homeVideoSrc} autoplay muted loop playsinline /> : null}
+      {
+        homeVideoSrc ? (
+          <>
+            <video src={homeVideoSrc} autoplay muted loop playsinline data-hero-video />
+            <button
+              type="button"
+              class="video-hero__mute"
+              data-hero-mute
+              aria-label="Activer le son de la vidéo"
+              aria-pressed="false"
+            >
+              <img
+                class="video-hero__mute-icon"
+                data-hero-mute-icon
+                src={muteIconUrl}
+                alt=""
+                width="16"
+                height="16"
+              />
+            </button>
+          </>
+        ) : null
+      }
     </div>
   </section>
 
@@ -108,4 +101,30 @@ const homeVideoSrc = homeBackgroundVideo?.videoUrl ?? undefined;
       {works.map((work) => <WorkCard work={work} />)}
     </div>
   </section>
+
+  {
+    homeVideoSrc ? (
+      <script define:vars={{ muteIconUrl, unmuteIconUrl }}>
+        const video = document.querySelector("[data-hero-video]");
+        const muteBtn = document.querySelector("[data-hero-mute]");
+        const muteIcon = document.querySelector("[data-hero-mute-icon]");
+
+        if (video && muteBtn && muteIcon) {
+          const updateMuteUi = () => {
+            const isMuted = video.muted;
+            muteIcon.src = isMuted ? muteIconUrl : unmuteIconUrl;
+            muteBtn.setAttribute("aria-label", isMuted ? "Activer le son de la vidéo" : "Couper le son de la vidéo");
+            muteBtn.setAttribute("aria-pressed", String(!isMuted));
+          };
+
+          updateMuteUi();
+
+          muteBtn.addEventListener("click", () => {
+            video.muted = !video.muted;
+            updateMuteUi();
+          });
+        }
+      </script>
+    ) : null
+  }
 </Layout>
