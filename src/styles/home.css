@@ -1,8 +1,8 @@
 .video-hero {
   position: relative;
   z-index: 0;
-  height: calc(100vh);
-  height: calc(100svh);
+  height: calc(100vh - 65px);
+  height: calc(100svh - 65px);
   overflow: hidden;
   background: #000;
   pointer-events: none;
@@ -63,13 +63,44 @@
 .video-hero__frame iframe,
 .video-hero__frame video {
   position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  inset: 0;
+  width: 100%;
   height: 100%;
-  width: auto;
-  aspect-ratio: 16 / 9;
-  max-width: none;
+  object-fit: cover;
+  object-position: center;
   border: 0;
+  pointer-events: none;
+}
+
+.video-hero__mute {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(220, 220, 220, 0.22);
+  color: rgba(245, 245, 245, 0.9);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background-color 0.2s ease;
+}
+
+.video-hero__mute:hover {
+  background: rgba(220, 220, 220, 0.55);
+}
+
+.video-hero__mute-icon {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  filter: brightness(0) invert(1);
+  user-select: none;
   pointer-events: none;
 }
