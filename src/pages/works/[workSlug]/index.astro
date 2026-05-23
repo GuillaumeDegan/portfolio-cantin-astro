@@ -8,14 +8,12 @@ import CategoryList from "../../../components/CategoryList.astro";
 import { format } from "date-fns";
 import "../../../styles/workDetails.css";
 import { youtubeEmbedUrl } from "../../../utils/index.astro";
+import { coverItemGroq, resolveCover, type CoverRaw } from "../../../lib/cover";
 type WorkDetailsDoc = {
   title: string;
   body: PortableTextBlock[];
   publishedAt: string;
-  coverImage: {
-    url: string;
-    alt: string;
-  };
+  coverItem: CoverRaw | null;
   categories: { title: string }[];
   slug: { current: string };
   gallery: {
@@ -38,7 +36,7 @@ const { workSlug } = Astro.params;
 const work = await sanity.fetch<WorkDetailsDoc>(
   `*[_type == "project" && slug.current == $slug][0]{
   title, body, publishedAt,
-  coverImage{ "url": asset->url, alt },
+  ${coverItemGroq},
   categories[]->{ title },
   gallery[]{ _key, _type, alt, "assetUrl": asset->url, url }
 }`,
@@ -48,6 +46,8 @@ const work = await sanity.fetch<WorkDetailsDoc>(
 if (!work) {
   return new Response(null, { status: 404 });
 }
+
+const cover = resolveCover(work.coverItem);
 
 const galleryMedia: GalleryMediaItem[] = [];
 const galleryLightbox: GalleryLightboxItem[] = [];
@@ -79,7 +79,19 @@ for (const g of work.gallery ?? []) {
 
 <Layout>
   <div class="work-details">
-    <img src={work.coverImage.url} alt={work.coverImage.alt} width="100%" height="100%" style="object-fit: cover; " />
+    {
+      cover?.kind === "image" ? (
+        <img class="cover-image" src={cover.src} alt={cover.alt} width="100%" height="100%" />
+      ) : cover?.kind === "youtube" ? (
+        <iframe
+          class="cover-image cover-image--video"
+          src={`${cover.embedUrl}${cover.embedUrl.includes("?") ? "&" : "?"}autoplay=1&mute=1`}
+          title={cover.alt}
+          allow="autoplay; encrypted-media"
+          allowfullscreen
+        />
+      ) : null
+    }
 
     <h1 style="font-family: 'Forma DJR Text Bold';">{work.title}</h1>
     <CategoryList names={work.categories.map((category) => category.title)} />
@@ -98,7 +110,7 @@ for (const g of work.gallery ?? []) {
               data-lightbox-open={item.lightboxIndex}
               aria-label={`Agrandir l’image ${item.lightboxIndex + 1}`}
             >
-              <img src={item.src} alt={item.alt} width="33%" height="300" loading="lazy" />
+              <img src={item.src} alt={item.alt} width="100%" height="300" loading="lazy" />
             </button>
           ) : (
             <div class="work-gallery__thumb">

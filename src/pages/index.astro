@@ -6,17 +6,16 @@ import { sanity } from "../lib/sanity";
 import muteIconUrl from "../assets/mute-icon.svg?url";
 import unmuteIconUrl from "../assets/unmute-icon.svg?url";
 import "../styles/home.css";
+import { coverItemGroq, type CoverRaw } from "../lib/cover";
 
 export type WorkListItem = {
   title: string;
+  publishedAt: string;
   categories: {
     title: string;
     slug: string;
   }[];
-  coverImage: {
-    url: string;
-    alt: string;
-  };
+  coverItem: CoverRaw | null;
   slug: {
     current: string;
   };
@@ -34,14 +33,12 @@ const categories = await sanity.fetch<{ title: string; slug: string }[]>(`
 const works = await sanity.fetch<WorkListItem[]>(
   `*[_type == "project" ${category ? `&& $category in categories[]->slug.current` : ""}] | order(publishedAt desc) {
     title,
+    publishedAt,
     "categories": categories[]->{
       title,
       "slug": slug.current
     },
-    coverImage{
-      "url": asset->url,
-      alt
-    },
+    ${coverItemGroq},
     slug{
       current
     }
